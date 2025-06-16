@@ -3,11 +3,12 @@ import type { Client } from '../types';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem } from '@mui/material';
 
 const ADDRESS_OPTIONS = [
-  'Венјамин Манџуковски',
+  'Венијамин Мачуковски',
   'Анастас Митрев',
   'Петар Ацев',
   'Симеон Кавракиров',
   'Кузман Ј. Питу',
+  'Васко Карангелески',
   'Јане Сандански',
   'АВНОЈ',
 ];

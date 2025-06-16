@@ -11,11 +11,12 @@ import AddIcon from '@mui/icons-material/Add';
 const API_URL = 'https://kurir.crnaovca.mk/api/clients';
 
 const ADDRESS_OPTIONS = [
-  'Венјамин Манџуковски',
+  'Венијамин Мачуковски',
   'Анастас Митрев',
   'Петар Ацев',
   'Симеон Кавракиров',
   'Кузман Ј. Питу',
+  'Васко Карангелески',
   'Јане Сандански',
   'АВНОЈ',
 ];
