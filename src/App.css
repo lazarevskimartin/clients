@@ -1,0 +1,329 @@
+/* Mobile-first styles for the client management app */
+body,
+html,
+#root {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  font-family: 'Inter', Arial, sans-serif;
+  background: #f8f9fa;
+}
+
+.app-container {
+  width: 100%;
+  margin: 0;
+  padding-left: 1rem;
+  padding-right: 1rem;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+  background: #fff;
+  min-height: 100vh;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.04);
+  position: relative;
+  box-sizing: border-box;
+}
+
+.app-title {
+  font-size: 2rem;
+  margin-bottom: 1rem;
+  text-align: left;
+}
+
+.client-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.client-card {
+  width: 100%;
+  box-sizing: border-box;
+  background: #f1f3f4;
+  border-radius: 12px;
+  padding: 1rem;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.03);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.client-card-vm {
+  background: #ffeaea;
+}
+
+.client-card-mj {
+  background: #fff3e0;
+}
+
+.client-card-pa {
+  background: #e3f2fd;
+}
+
+.client-card-am {
+  background: #e8f5e9;
+}
+
+.client-card-sk {
+  background: #f3e5f5;
+}
+
+.client-card-kjp {
+  background: #f9fbe7;
+}
+
+.client-card-js {
+  background: #e0f7fa;
+}
+
+.client-card-avnoj {
+  background: #fce4ec;
+}
+
+.client-name {
+  font-weight: 600;
+  font-size: 1.1rem;
+}
+
+.client-address,
+.client-phone {
+  font-size: 0.95rem;
+  color: #555;
+}
+
+.client-actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.call-btn,
+.delete-btn {
+  height: 2.4rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1.2rem;
+  font-size: 1rem;
+  border-radius: 8px;
+  border: none;
+  box-sizing: border-box;
+}
+
+.call-btn {
+  background: #28a745;
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.call-btn:hover {
+  background: #218838;
+}
+
+.fab {
+  position: fixed;
+  right: 1.5rem;
+  bottom: 2.5rem;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: #007bff;
+  color: #fff;
+  font-size: 2rem;
+  border: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 100;
+  transition: background 0.2s;
+}
+
+.fab:hover {
+  background: #0056b3;
+}
+
+/* Modal styles */
+.modal-backdrop {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  z-index: 200;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 16px 16px 0 0;
+  width: 100%;
+  max-width: 100%;
+  padding: 2rem 1.2rem 1.5rem 1.2rem;
+  box-shadow: 0 -2px 16px rgba(0, 0, 0, 0.08);
+  animation: slideUp 0.2s;
+  position: relative;
+  bottom: 0;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+.modal input,
+.modal select {
+  width: 100%;
+  padding: 0.75rem;
+  margin-bottom: 1rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  box-sizing: border-box;
+  background: #fff;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 1rem;
+}
+
+.modal-actions button {
+  padding: 0.5rem 1.2rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+.modal-actions button[type="submit"] {
+  background: #007bff;
+  color: #fff;
+}
+
+.modal-actions button[type="button"] {
+  background: #eee;
+  color: #333;
+}
+
+.delete-btn {
+  align-self: flex-end;
+  background: #ff4d4f;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.delete-btn:hover {
+  background: #d9363e;
+}
+
+.app-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.add-top-btn {
+  background: #007bff;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 0.5rem 1.2rem;
+  font-size: 1rem;
+  font-weight: 500;
+  width: 100%;
+  max-width: 160px;
+  min-width: 80px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  transition: background 0.2s;
+}
+
+.add-top-btn:hover {
+  background: #0056b3;
+}
+
+.address-filter-container {
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.address-filter {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  font-size: 1rem;
+  box-sizing: border-box;
+  background: #fff;
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+}
+
+@media (max-width: 600px) {
+  .app-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.5rem;
+  }
+
+  .add-top-btn {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    margin-top: 0.5rem;
+  }
+
+  .app-title {
+    text-align: left;
+    width: 100%;
+  }
+
+  html,
+  body,
+  #root,
+  .app-container {
+    width: 100%;
+    min-width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+}
+
+@media (min-width: 600px) {
+  .modal {
+    left: 50%;
+    transform: translateX(-50%);
+    max-width: 400px;
+    border-radius: 16px;
+  }
+
+  .modal-backdrop {
+    align-items: center;
+  }
+}
