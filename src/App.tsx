@@ -1,12 +1,15 @@
+import UserMenu from './components/UserMenu';
 import { useEffect, useState } from 'react';
 import ClientCard from './components/ClientCard';
 import AddClientModal from './components/AddClientModal';
 import ConfirmModal from './components/ConfirmModal';
 import Login from './components/Login';
+import Register from './components/Register';
 import StatusNav from './components/StatusNav';
+import UserProfile from './components/UserProfile';
 import type { Client } from './types';
 import './App.css';
-import { Container, AppBar, Toolbar, Typography, IconButton, Select, MenuItem, CircularProgress, Box, Fab } from '@mui/material';
+import { Container, AppBar, Toolbar, Typography, IconButton, Select, MenuItem, CircularProgress, Box, Fab, Button } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 
 const API_URL = 'https://kurir.crnaovca.mk/api/clients';
@@ -30,22 +33,21 @@ function App() {
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [clientToDelete, setClientToDelete] = useState<string | undefined>(undefined);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [loginError, setLoginError] = useState<string | undefined>(undefined);
   const [statusFilter, setStatusFilter] = useState<string>('');
-
-  const USERS = [
-    { username: 'martin', password: 'Macki2000*' },
-    { username: 'ana', password: 'Ana2000*' },
-    { username: 'georg', password: 'Goga2000*' },
-  ];
+  const [showRegister, setShowRegister] = useState(false);
+  const [showProfilePage, setShowProfilePage] = useState(false);
 
   useEffect(() => {
+    if (!isLoggedIn) return;
     setLoading(true);
     let url = API_URL;
     if (statusFilter) {
       url = `${API_URL}/status/${statusFilter}`;
     }
-    fetch(url)
+    const token = localStorage.getItem('token');
+    fetch(url, {
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+    })
       .then(res => res.json())
       .then(data => {
         setClients(data);
@@ -57,12 +59,33 @@ function App() {
     };
     window.addEventListener('client-status-changed', handler);
     return () => window.removeEventListener('client-status-changed', handler);
-  }, [statusFilter]);
+  }, [statusFilter, isLoggedIn]);
+
+  useEffect(() => {
+    // Check for JWT token
+    const token = localStorage.getItem('token');
+    setIsLoggedIn(!!token);
+  }, []);
+
+  useEffect(() => {
+    const showRegisterHandler = () => setShowRegister(true);
+    const showLoginHandler = () => setShowRegister(false);
+    window.addEventListener('show-register', showRegisterHandler);
+    window.addEventListener('show-login', showLoginHandler);
+    return () => {
+      window.removeEventListener('show-register', showRegisterHandler);
+      window.removeEventListener('show-login', showLoginHandler);
+    };
+  }, []);
 
   const handleAddClient = async (client: Omit<Client, '_id'>) => {
+    const token = localStorage.getItem('token');
     const res = await fetch(API_URL, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      },
       body: JSON.stringify(client),
     });
     const newClient = await res.json();
@@ -76,20 +99,20 @@ function App() {
 
   const handleDeleteConfirm = async () => {
     if (!clientToDelete) return;
-    await fetch(`${API_URL}/${clientToDelete}`, { method: 'DELETE' });
+    const token = localStorage.getItem('token');
+    await fetch(`${API_URL}/${clientToDelete}`, {
+      method: 'DELETE',
+      headers: token ? { 'Authorization': `Bearer ${token}` } : {},
+    });
     setClients(prev => prev.filter(client => client._id !== clientToDelete));
     setConfirmOpen(false);
     setClientToDelete(undefined);
   };
 
-  const handleLogin = (username: string, password: string) => {
-    const found = USERS.find(u => u.username === username && u.password === password);
-    if (found) {
-      setIsLoggedIn(true);
-      setLoginError(undefined);
-    } else {
-      setLoginError('Погрешно корисничко име или лозинка');
-    }
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setIsLoggedIn(false);
+    window.location.reload();
   };
 
   const filteredClients = addressFilter
@@ -129,7 +152,29 @@ function App() {
   }
 
   if (!isLoggedIn) {
-    return <Login onLogin={handleLogin} error={loginError} />;
+    return (
+      <div>
+        {showRegister ? (
+          <>
+            <Register />
+            <button style={{ margin: 16 }} onClick={() => setShowRegister(false)}>Already have an account? Login</button>
+          </>
+        ) : (
+          <Login />
+        )}
+      </div>
+    );
+  }
+
+  if (showProfilePage) {
+    return (
+      <Container maxWidth="sm" sx={{ p: 0, pb: 7 }}>
+        <UserProfile />
+        <Box sx={{ textAlign: 'center', mt: 2 }}>
+          <Button variant="outlined" onClick={() => setShowProfilePage(false)}>Назад</Button>
+        </Box>
+      </Container>
+    );
   }
 
   return (
@@ -139,9 +184,15 @@ function App() {
           <Typography variant="h6" component="div">
             Пратки
           </Typography>
-          <IconButton color="inherit" onClick={() => setModalOpen(true)} size="large">
-            <AddIcon />
-          </IconButton>
+          <div>
+            <IconButton color="inherit" onClick={() => setModalOpen(true)} size="large">
+              <AddIcon />
+            </IconButton>
+            <UserMenu
+              onProfile={() => setShowProfilePage(true)}
+              onLogout={handleLogout}
+            />
+          </div>
         </Toolbar>
       </AppBar>
       <Box sx={{ mb: 2, px: 1 }}>

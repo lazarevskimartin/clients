@@ -40,9 +40,13 @@ const ClientCard: React.FC<ClientCardProps> = ({ client, onDelete }) => {
       setStatus(newStatus);
       setAnchorEl(null);
       // Call API to update status
+      const token = localStorage.getItem('token');
       await fetch(`/api/clients/${client._id}/status`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
         body: JSON.stringify({ status: newStatus }),
       });
       // Remove from UI if status changes (for filtered views)
