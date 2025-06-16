@@ -1,27 +1,19 @@
 import React, { useState } from 'react';
 import type { Client } from '../types';
-import { Card, CardContent, Typography, Box, Button, IconButton } from '@mui/material';
+import { Card, CardContent, Typography, Box, Button, IconButton, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PhoneIcon from '@mui/icons-material/Phone';
 import SvgIcon from '@mui/material/SvgIcon';
 import MapIcon from './MapIcon';
 import MapModal from './MapModal';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
+import CancelIcon from '@mui/icons-material/Cancel';
 
 interface ClientCardProps {
     client: Client;
     onDelete?: (id: string | undefined) => void;
 }
-
-const STREET_COLORS: Record<string, string> = {
-  'Венијамин Мачуковски': '#ffe0b2', // light orange-peach
-  'Анастас Митрев': '#e3f2fd', // light blue
-  'Петар Ацев': '#ffebee', // light red
-  'Симеон Кавракиров': '#e8f5e9', // light green
-  'Кузман Ј. Питу': '#fffde7', // light yellow
-  'Васко Карангелески': '#d1c4e9', // light purple
-  'Јане Сандански': '#e0f2f1', // light teal
-  'АВНОЈ': '#fbe9e7', // light orange
-};
 
 const ViberIcon = (props: any) => (
   <SvgIcon {...props} viewBox="0 0 24 24">
@@ -29,11 +21,40 @@ const ViberIcon = (props: any) => (
   </SvgIcon>
 );
 
+const statusIcons = {
+  delivered: <CheckCircleIcon color="success" />,
+  pending: <HourglassEmptyIcon color="warning" />,
+  undelivered: <CancelIcon color="error" />,
+};
+
 const ClientCard: React.FC<ClientCardProps> = ({ client, onDelete }) => {
     const [mapOpen, setMapOpen] = useState(false);
-    const borderColor = STREET_COLORS[(client.address || '').split(' ').slice(0, -1).join(' ')] || '#f1f3f4';
+    const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+    const [status, setStatus] = useState<'delivered' | 'undelivered' | 'pending'>(client.status || 'pending');
+
+    const handleStatusClick = (event: React.MouseEvent<HTMLElement>) => {
+      setAnchorEl(event.currentTarget);
+    };
+    const handleStatusClose = () => setAnchorEl(null);
+    const handleStatusChange = async (newStatus: 'delivered' | 'undelivered' | 'pending') => {
+      setStatus(newStatus);
+      setAnchorEl(null);
+      // Call API to update status
+      await fetch(`/api/clients/${client._id}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      // Remove from UI if status changes (for filtered views)
+      if (client.status !== newStatus) {
+        if (typeof window !== 'undefined' && window.dispatchEvent) {
+          window.dispatchEvent(new CustomEvent('client-status-changed', { detail: { id: client._id, status: newStatus } }));
+        }
+      }
+    };
+
     return (
-        <Card sx={{ mb: 1, border: `3px solid ${borderColor}`, background: 'background.paper', borderRadius: 2 }}>
+        <Card sx={{ mt: 2, background: 'background.paper', borderRadius: 2 }}>
             <CardContent>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                     <Typography variant="h6" className="client-name">
@@ -78,6 +99,65 @@ const ClientCard: React.FC<ClientCardProps> = ({ client, onDelete }) => {
                             <DeleteIcon />
                         </IconButton>
                     )}
+                </Box>
+                <Box sx={{ display: 'flex', alignItems: 'center', mt: 2 }}>
+                  <IconButton
+                    onClick={handleStatusClick}
+                    sx={{
+                      color: 'black',
+                      mr: 1,
+                      background: '#f5f5f5',
+                      borderRadius: 2,
+                      boxShadow: 1,
+                      border: '1px solid #e0e0e0',
+                      transition: 'background 0.2s',
+                      '&:hover': {
+                        background: '#e0e0e0',
+                        color: '#1976d2',
+                      },
+                      p: 1.2,
+                    }}
+                  >
+                    {statusIcons[status]}
+                  </IconButton>
+                  <Typography
+                    variant="caption"
+                    sx={{
+                      color: status === 'delivered' ? 'success.main' : status === 'undelivered' ? 'error.main' : 'warning.main',
+                      fontWeight: 600,
+                      letterSpacing: 0.5,
+                      ml: 0.5,
+                      fontSize: '1rem',
+                    }}
+                  >
+                    {status === 'delivered' ? 'Доставена' : status === 'undelivered' ? 'Недоставена' : 'Во тек'}
+                  </Typography>
+                  <Menu
+                    anchorEl={anchorEl}
+                    open={Boolean(anchorEl)}
+                    onClose={handleStatusClose}
+                    PaperProps={{
+                      sx: {
+                        borderRadius: 2,
+                        minWidth: 180,
+                        boxShadow: 3,
+                        p: 1,
+                      },
+                    }}
+                  >
+                    <MenuItem onClick={() => handleStatusChange('delivered')} sx={{ borderRadius: 1 }}>
+                      <ListItemIcon><CheckCircleIcon color="success" /></ListItemIcon>
+                      <ListItemText primary="Доставена" />
+                    </MenuItem>
+                    <MenuItem onClick={() => handleStatusChange('pending')} sx={{ borderRadius: 1 }}>
+                      <ListItemIcon><HourglassEmptyIcon color="warning" /></ListItemIcon>
+                      <ListItemText primary="Во тек" />
+                    </MenuItem>
+                    <MenuItem onClick={() => handleStatusChange('undelivered')} sx={{ borderRadius: 1 }}>
+                      <ListItemIcon><CancelIcon color="error" /></ListItemIcon>
+                      <ListItemText primary="Недоставена" />
+                    </MenuItem>
+                  </Menu>
                 </Box>
                 <MapModal open={mapOpen} onClose={() => setMapOpen(false)} address={client.address || ''} />
             </CardContent>

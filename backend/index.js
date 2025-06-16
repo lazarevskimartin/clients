@@ -12,7 +12,8 @@ app.use(express.json());
 const clientSchema = new mongoose.Schema({
     fullName: { type: String, required: true },
     address: { type: String, required: true },
-    phone: { type: String, required: true }
+    phone: { type: String, required: true },
+    status: { type: String, enum: ['delivered', 'undelivered', 'pending'], default: 'pending' }
 });
 
 const Client = mongoose.model('Client', clientSchema);
@@ -33,6 +34,28 @@ app.delete('/api/clients/:id', async (req, res) => {
     const { id } = req.params;
     await Client.findByIdAndDelete(id);
     res.status(204).end();
+});
+
+// Get clients by status
+app.get('/api/clients/status/:status', async (req, res) => {
+    const { status } = req.params;
+    if (!['delivered', 'undelivered', 'pending'].includes(status)) {
+        return res.status(400).json({ error: 'Invalid status' });
+    }
+    const clients = await Client.find({ status });
+    res.json(clients);
+});
+
+// Update client status
+app.patch('/api/clients/:id/status', async (req, res) => {
+    const { id } = req.params;
+    const { status } = req.body;
+    if (!['delivered', 'undelivered', 'pending'].includes(status)) {
+        return res.status(400).json({ error: 'Invalid status' });
+    }
+    const client = await Client.findByIdAndUpdate(id, { status }, { new: true });
+    if (!client) return res.status(404).json({ error: 'Client not found' });
+    res.json(client);
 });
 
 const PORT = process.env.PORT || 5000;

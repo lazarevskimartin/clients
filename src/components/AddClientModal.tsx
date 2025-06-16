@@ -31,6 +31,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({ open, onClose, onAdd })
             fullName,
             address: address + (streetNumber ? ' ' + streetNumber : ''),
             phone,
+            status: 'pending',
         });
         setFullName('');
         setAddress('');

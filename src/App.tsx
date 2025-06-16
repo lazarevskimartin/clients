@@ -3,6 +3,7 @@ import ClientCard from './components/ClientCard';
 import AddClientModal from './components/AddClientModal';
 import ConfirmModal from './components/ConfirmModal';
 import Login from './components/Login';
+import StatusNav from './components/StatusNav';
 import type { Client } from './types';
 import './App.css';
 import { Container, AppBar, Toolbar, Typography, IconButton, Select, MenuItem, CircularProgress, Box, Fab } from '@mui/material';
@@ -30,6 +31,7 @@ function App() {
   const [clientToDelete, setClientToDelete] = useState<string | undefined>(undefined);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loginError, setLoginError] = useState<string | undefined>(undefined);
+  const [statusFilter, setStatusFilter] = useState<string>('');
 
   const USERS = [
     { username: 'martin', password: 'Macki2000*' },
@@ -38,13 +40,24 @@ function App() {
   ];
 
   useEffect(() => {
-    fetch(API_URL)
+    setLoading(true);
+    let url = API_URL;
+    if (statusFilter) {
+      url = `${API_URL}/status/${statusFilter}`;
+    }
+    fetch(url)
       .then(res => res.json())
       .then(data => {
         setClients(data);
         setLoading(false);
       });
-  }, []);
+    // Listen for status change to remove client from list
+    const handler = (e: any) => {
+      setClients(prev => prev.filter(c => c._id !== e.detail.id));
+    };
+    window.addEventListener('client-status-changed', handler);
+    return () => window.removeEventListener('client-status-changed', handler);
+  }, [statusFilter]);
 
   const handleAddClient = async (client: Omit<Client, '_id'>) => {
     const res = await fetch(API_URL, {
@@ -120,7 +133,7 @@ function App() {
   }
 
   return (
-    <Container maxWidth="sm" sx={{ p: 0 }}>
+    <Container maxWidth="sm" sx={{ p: 0, pb: 7 }}>
       <AppBar position="static" color="primary" sx={{ mb: 2 }}>
         <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
           <Typography variant="h6" component="div">
@@ -167,10 +180,11 @@ function App() {
         onConfirm={handleDeleteConfirm}
         message="Дали сте сигурни дека сакате да го избришете овој клиент?"
       />
+      <StatusNav value={statusFilter} onChange={setStatusFilter} />
       <Fab
         color="primary"
         aria-label="add"
-        sx={{ position: 'fixed', right: 24, bottom: 40, zIndex: 100 }}
+        sx={{ position: 'fixed', right: 24, bottom: 80, zIndex: 100 }}
         onClick={() => setModalOpen(true)}
       >
         <AddIcon />
