@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { TextField, Button } from '@mui/material';
 import './Login.css';
 
 interface LoginProps {
@@ -16,25 +17,30 @@ const Login: React.FC<LoginProps> = ({ onLogin, error }) => {
     };
 
     return (
-        <div className="login-container">
-            <form className="login-form" onSubmit={handleSubmit}>
-                <h2>Најава</h2>
-                <input
-                    type="text"
-                    placeholder="Корисничко име"
+        <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f8f9fa' }}>
+            <form onSubmit={handleSubmit} style={{ width: '100%', maxWidth: 360 }}>
+                <h2 style={{ marginBottom: 16, fontWeight: 600, fontSize: '1.5rem' }}>Најава</h2>
+                {error && <div style={{ color: '#d32f2f', marginBottom: 16 }}>{error}</div>}
+                <TextField
+                    label="Корисничко име"
                     value={username}
                     onChange={e => setUsername(e.target.value)}
+                    fullWidth
+                    margin="normal"
                     required
                 />
-                <input
+                <TextField
+                    label="Лозинка"
                     type="password"
-                    placeholder="Лозинка"
                     value={password}
                     onChange={e => setPassword(e.target.value)}
+                    fullWidth
+                    margin="normal"
                     required
                 />
-                {error && <div className="login-error">{error}</div>}
-                <button type="submit">Најава</button>
+                <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
+                    Најави се
+                </Button>
             </form>
         </div>
     );

@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
 import type { Client } from '../types';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem } from '@mui/material';
 
 const ADDRESS_OPTIONS = [
-    'В. Манџуковски',
-    'Анастас Митрев',
-    'Петар Ацев',
-    'Симеон Кавракиров',
-    'К. Ј. Питу',
-    'Јане Сандански',
-    'АВНОЈ',
+  'Венјамин Манџуковски',
+  'Анастас Митрев',
+  'Петар Ацев',
+  'Симеон Кавракиров',
+  'Кузман Ј. Питу',
+  'Јане Сандански',
+  'АВНОЈ',
 ];
 
 interface AddClientModalProps {
@@ -21,64 +22,72 @@ const AddClientModal: React.FC<AddClientModalProps> = ({ open, onClose, onAdd })
     const [fullName, setFullName] = useState('');
     const [address, setAddress] = useState('');
     const [streetNumber, setStreetNumber] = useState('');
-    const [phone, setPhone] = useState('');
+    const [phone, setPhone] = useState('+389');
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        const fullAddress = streetNumber ? `${address} ${streetNumber}` : address;
-        onAdd({ fullName, address: fullAddress, phone });
+        onAdd({
+            fullName,
+            address: address + (streetNumber ? ' ' + streetNumber : ''),
+            phone,
+        });
         setFullName('');
         setAddress('');
         setStreetNumber('');
-        setPhone('');
+        setPhone('+389'); // Reset to default
         onClose();
     };
 
     if (!open) return null;
 
     return (
-        <div className="modal-backdrop">
-            <div className="modal">
-                <h2>Додади нов клиент</h2>
+        <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
+            <DialogTitle>Додај клиент</DialogTitle>
+            <DialogContent>
                 <form onSubmit={handleSubmit}>
-                    <input
-                        type="text"
-                        placeholder="Име и презиме"
+                    <TextField
+                        label="Име и презиме"
                         value={fullName}
                         onChange={e => setFullName(e.target.value)}
+                        fullWidth
+                        margin="normal"
                         required
                     />
-                    <select
-                        value={address}
-                        onChange={e => setAddress(e.target.value)}
-                        required
-                    >
-                        <option value="" disabled>Избери адреса</option>
-                        {ADDRESS_OPTIONS.map(opt => (
-                            <option key={opt} value={opt}>{opt}</option>
-                        ))}
-                    </select>
-                    <input
-                        type="text"
-                        placeholder="Број на улица"
-                        value={streetNumber}
-                        onChange={e => setStreetNumber(e.target.value)}
-                        required
-                    />
-                    <input
-                        type="tel"
-                        placeholder="Број на телефон"
+                    <TextField
+                        label="Телефон"
                         value={phone}
                         onChange={e => setPhone(e.target.value)}
+                        fullWidth
+                        margin="normal"
                         required
                     />
-                    <div className="modal-actions">
-                        <button type="button" onClick={onClose}>Откажи</button>
-                        <button type="submit">Додади</button>
-                    </div>
+                    <TextField
+                        label="Адреса"
+                        value={address}
+                        onChange={e => setAddress(e.target.value)}
+                        fullWidth
+                        margin="normal"
+                        required
+                        select
+                    >
+                        {ADDRESS_OPTIONS.map(opt => (
+                            <MenuItem key={opt} value={opt}>{opt}</MenuItem>
+                        ))}
+                    </TextField>
+                    <TextField
+                        label="Број на улица"
+                        value={streetNumber}
+                        onChange={e => setStreetNumber(e.target.value)}
+                        fullWidth
+                        margin="normal"
+                    />
+                    <DialogActions>
+                        <Button onClick={onClose} color="secondary">Откажи</Button>
+                        <Button type="submit" variant="contained">Додај</Button>
+                    </DialogActions>
                 </form>
-            </div>
-        </div>
+            </DialogContent>
+        </Dialog>
     );
 };
 
