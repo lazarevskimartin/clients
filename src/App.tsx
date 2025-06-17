@@ -9,8 +9,14 @@ import StatusNav from './components/StatusNav';
 import UserProfile from './components/UserProfile';
 import type { Client } from './types';
 import './App.css';
-import { Container, AppBar, Toolbar, Typography, IconButton, Select, MenuItem, CircularProgress, Box, Fab, Button } from '@mui/material';
+import { Container, AppBar, Toolbar, Typography, IconButton, CircularProgress, Box, Fab, Button, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Chip, useMediaQuery } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import SearchIcon from '@mui/icons-material/Search';
+import FilterListIcon from '@mui/icons-material/FilterList';
+import CheckCircleIcon from '@mui/icons-material/CheckCircle';
+import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
+import CancelIcon from '@mui/icons-material/Cancel';
+import { useTheme } from '@mui/material/styles';
 
 const API_URL = 'https://kurir.crnaovca.mk/api/clients';
 
@@ -36,6 +42,10 @@ function App() {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [showRegister, setShowRegister] = useState(false);
   const [showProfilePage, setShowProfilePage] = useState(false);
+  const [search, setSearch] = useState('');
+  const [addressFilterOpen, setAddressFilterOpen] = useState(false);
+  const theme = useTheme();
+  const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
 
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -78,6 +88,13 @@ function App() {
     };
   }, []);
 
+  // Set default status filter to 'pending' on login
+  useEffect(() => {
+    if (isLoggedIn && statusFilter === '') {
+      setStatusFilter('pending');
+    }
+  }, [isLoggedIn, statusFilter]);
+
   const handleAddClient = async (client: Omit<Client, '_id'>) => {
     const token = localStorage.getItem('token');
     const res = await fetch(API_URL, {
@@ -115,9 +132,20 @@ function App() {
     window.location.reload();
   };
 
-  const filteredClients = addressFilter
-    ? clients.filter(client => client.address.startsWith(addressFilter))
-    : clients;
+  // Filter clients by search and address
+  const filteredClients = clients.filter(client => {
+    // Only show clients matching current status
+    if (statusFilter && client.status !== statusFilter) return false;
+    // Search by name, phone, or address
+    const searchLower = search.toLowerCase();
+    return (
+      (!searchLower ||
+        client.fullName.toLowerCase().includes(searchLower) ||
+        client.phone.toLowerCase().includes(searchLower) ||
+        client.address.toLowerCase().includes(searchLower)) &&
+      (!addressFilter || client.address.startsWith(addressFilter))
+    );
+  });
 
   // Sort by ADDRESS_OPTIONS order if all addresses are selected
   let sortedClients: Client[];
@@ -178,69 +206,190 @@ function App() {
   }
 
   return (
-    <Container maxWidth="sm" sx={{ p: 0, pb: 7 }}>
-      <AppBar position="static" color="primary" sx={{ mb: 2 }}>
-        <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
-          <Typography variant="h6" component="div">
-            Пратки
-          </Typography>
-          <div>
-            <IconButton color="inherit" onClick={() => setModalOpen(true)} size="large">
-              <AddIcon />
-            </IconButton>
-            <UserMenu
-              onProfile={() => setShowProfilePage(true)}
-              onLogout={handleLogout}
-            />
-          </div>
-        </Toolbar>
-      </AppBar>
-      <Box sx={{ mb: 2, px: 1 }}>
-        <Select
-          fullWidth
-          displayEmpty
-          value={addressFilter}
-          onChange={e => setAddressFilter(e.target.value)}
-          sx={{ background: '#fff', borderRadius: 2, px: 1 }}
+    <Box sx={{ display: { xs: 'block', md: 'flex' }, width: '100vw', minHeight: '100vh', background: '#f8f9fa' }}>
+      {isDesktop && (
+        <Drawer
+          variant="permanent"
+          sx={{
+            width: 260,
+            flexShrink: 0,
+            [`& .MuiDrawer-paper`]: { width: 260, boxSizing: 'border-box', pt: 2, background: '#fff' },
+          }}
+          open
         >
-          <MenuItem value="">Сите адреси</MenuItem>
-          {ADDRESS_OPTIONS.map(opt => (
-            <MenuItem key={opt} value={opt}>{opt}</MenuItem>
-          ))}
-        </Select>
-      </Box>
-      {loading ? (
-        <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-          <CircularProgress />
-        </Box>
-      ) : (
-        <Box className="client-list" sx={{ px: 1 }}>
-          {sortedClients.map(client => (
-            <ClientCard key={client._id} client={client} onDelete={handleDeleteRequest} />
-          ))}
-        </Box>
+          <List>
+            <ListItem disablePadding>
+              <ListItemButton selected={statusFilter === 'delivered'} onClick={() => setStatusFilter('delivered')}>
+                <ListItemIcon><CheckCircleIcon color={statusFilter === 'delivered' ? 'success' : 'inherit'} /></ListItemIcon>
+                <ListItemText primary="Доставени" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton selected={statusFilter === 'pending'} onClick={() => setStatusFilter('pending')}>
+                <ListItemIcon><HourglassEmptyIcon color={statusFilter === 'pending' ? 'warning' : 'inherit'} /></ListItemIcon>
+                <ListItemText primary="Во тек" />
+              </ListItemButton>
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemButton selected={statusFilter === 'undelivered'} onClick={() => setStatusFilter('undelivered')}>
+                <ListItemIcon><CancelIcon color={statusFilter === 'undelivered' ? 'error' : 'inherit'} /></ListItemIcon>
+                <ListItemText primary="Недоставени" />
+              </ListItemButton>
+            </ListItem>
+          </List>
+          <Box sx={{ flexGrow: 1 }} />
+          <Box sx={{ p: 2 }}>
+            <UserMenu onProfile={() => setShowProfilePage(true)} onLogout={handleLogout} />
+          </Box>
+        </Drawer>
       )}
-      <AddClientModal
-        open={modalOpen}
-        onClose={() => setModalOpen(false)}
-        onAdd={handleAddClient}
-      />
-      <ConfirmModal
-        open={confirmOpen}
-        onClose={() => setConfirmOpen(false)}
-        onConfirm={handleDeleteConfirm}
-        message="Дали сте сигурни дека сакате да го избришете овој клиент?"
-      />
-      <StatusNav value={statusFilter} onChange={setStatusFilter} />
-      <Fab
-        color="primary"
-        aria-label="add"
-        sx={{ position: 'fixed', right: 24, bottom: 80, zIndex: 100 }}
-        onClick={() => setModalOpen(true)}
-      >
-        <AddIcon />
-      </Fab>
-    </Container>
+      <Box sx={{ flex: 1, maxWidth: { xs: '100vw', md: 'calc(100vw - 260px)' }, mx: 'auto', p: { xs: 0, md: 4 } }}>
+        {/* Top bar for mobile only */}
+        {!isDesktop && (
+          <AppBar position="static" color="primary" sx={{ mb: 2 }}>
+            <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
+              <Typography variant="h6" component="div">
+                Пратки
+              </Typography>
+              <UserMenu onProfile={() => setShowProfilePage(true)} onLogout={handleLogout} />
+            </Toolbar>
+          </AppBar>
+        )}
+        {/* Address filter for desktop (chips) */}
+        {isDesktop && (
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center', minWidth: 300, mb: 3 }}>
+            <Chip
+              label="Сите адреси"
+              color={addressFilter === '' ? 'primary' : 'default'}
+              onClick={() => setAddressFilter('')}
+              variant={addressFilter === '' ? 'filled' : 'outlined'}
+              clickable
+            />
+            {ADDRESS_OPTIONS.map(opt => (
+              <Chip
+                key={opt}
+                label={opt}
+                color={addressFilter === opt ? 'primary' : 'default'}
+                onClick={() => setAddressFilter(opt)}
+                variant={addressFilter === opt ? 'filled' : 'outlined'}
+                clickable
+              />
+            ))}
+          </Box>
+        )}
+        {/* Search bar for desktop under address filter */}
+        {isDesktop && (
+          <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
+            <SearchIcon sx={{ mr: 1, fontSize: 32 }} />
+            <input
+              type="text"
+              placeholder="Пребарај по име, телефон или адреса..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ flex: 1, padding: 8, borderRadius: 8, border: '1px solid #ccc', fontSize: '1rem', maxWidth: 500 }}
+            />
+          </Box>
+        )}
+        {/* Mobile: search and filter in one row */}
+        {!isDesktop && (
+          <Box sx={{ display: 'flex', flexDirection: 'row', alignItems: 'center', gap: 1, mb: 3, px: 1, width: '100%', maxWidth: '100%', boxSizing: 'border-box', overflow: 'hidden' }}>
+            <SearchIcon sx={{ mr: 1, fontSize: 24 }} />
+            <input
+              type="text"
+              placeholder="Пребарај по име, телефон или адреса..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              style={{ flex: 1, minWidth: 0, padding: 8, borderRadius: 8, border: '1px solid #ccc', fontSize: '1rem', maxWidth: '100%' }}
+            />
+            <IconButton sx={{ ml: 1, flexShrink: 0 }} onClick={() => setAddressFilterOpen(open => !open)}>
+              <FilterListIcon sx={{ fontSize: 24 }} />
+            </IconButton>
+          </Box>
+        )}
+        {/* Address filter popover for mobile only */}
+        {!isDesktop && addressFilterOpen && (
+          <Box
+            onClick={e => e.stopPropagation()}
+            sx={{ position: 'fixed', top: 120, left: 0, right: 0, zIndex: 2000, background: '#fff', p: 2, borderRadius: 2, boxShadow: 3, mx: 2 }}
+          >
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
+              <strong>Филтер по адреса</strong>
+            </Box>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 1 }}>
+              <Button
+                variant={addressFilter === '' ? 'contained' : 'outlined'}
+                size="small"
+                onClick={() => { setAddressFilter(''); setAddressFilterOpen(false); }}
+              >
+                Сите адреси
+              </Button>
+              {ADDRESS_OPTIONS.map(opt => (
+                <Button
+                  key={opt}
+                  variant={addressFilter === opt ? 'contained' : 'outlined'}
+                  size="small"
+                  onClick={() => { setAddressFilter(opt); setAddressFilterOpen(false); }}
+                >
+                  {opt}
+                </Button>
+              ))}
+            </Box>
+          </Box>
+        )}
+        {/* Client cards grid for desktop, column for mobile */}
+        <Box className="client-list" sx={{
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            sm: '1fr',
+            md: '1fr 1fr',
+            lg: '1fr 1fr',
+            xl: '1fr 1fr 1fr',
+            '2xl': '1fr 1fr 1fr 1fr',
+            '@media (min-width:1440px)': '1fr 1fr 1fr',
+            '@media (min-width:1920px)': '1fr 1fr 1fr 1fr',
+          },
+          gap: 3,
+          px: { xs: 1, md: 0 },
+          maxWidth: { md: 1200 },
+          mx: { md: 'auto' },
+          justifyItems: 'stretch',
+          alignItems: 'stretch',
+        }}>
+          {loading ? (
+            <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, gridColumn: '1/-1' }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            sortedClients.map(client => (
+              <ClientCard key={client._id} client={client} onDelete={handleDeleteRequest} />
+            ))
+          )}
+        </Box>
+        <AddClientModal
+          open={modalOpen}
+          onClose={() => setModalOpen(false)}
+          onAdd={handleAddClient}
+        />
+        <ConfirmModal
+          open={confirmOpen}
+          onClose={() => setConfirmOpen(false)}
+          onConfirm={handleDeleteConfirm}
+          message="Дали сте сигурни дека сакате да го избришете овој клиент?"
+        />
+        {!isDesktop && (
+          <StatusNav value={statusFilter} onChange={setStatusFilter} />
+        )}
+        <Fab
+          color="primary"
+          aria-label="add"
+          sx={{ position: 'fixed', right: 24, bottom: 80, zIndex: 100 }}
+          onClick={() => setModalOpen(true)}
+        >
+          <AddIcon />
+        </Fab>
+      </Box>
+    </Box>
   );
 }
 

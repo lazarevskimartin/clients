@@ -28,8 +28,9 @@ const UserMenu: React.FC<Omit<UserMenuProps, 'email'>> = ({ onProfile, onLogout 
         anchorEl={anchorEl}
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-        transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+        anchorOrigin={{ vertical: 'top', horizontal: 'right' }}
+        transformOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+        slotProps={{ paper: { sx: { mt: -2 } } }}
       >
         <MenuItem onClick={() => { handleMenuClose(); onProfile(); }}>
           Мој профил
