@@ -37,6 +37,13 @@ const MapModal: React.FC<MapModalProps> = ({ open, onClose, address }) => {
     } else {
       displayAddress = 'Vasko Karangeleski';
     }
+  } else if (address && address.includes('3-та Македонска Бригада')) {
+    const match = address.match(/3-та Македонска Бригада\s*(\d+)/);
+    if (match) {
+      displayAddress = `3rd Macedonian Brigade Blvd ${match[1]}`;
+    } else {
+      displayAddress = '3rd Macedonian Brigade Blvd';
+    }
   }
   const googleSrc = `https://www.google.com/maps?q=${encodeURIComponent(displayAddress)}&output=embed`;
 

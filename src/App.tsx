@@ -29,6 +29,7 @@ const ADDRESS_OPTIONS = [
   'Васко Карангелески',
   'Јане Сандански',
   'АВНОЈ',
+  '3-та Македонска Бригада',
 ];
 
 function App() {
@@ -249,7 +250,7 @@ function App() {
           <AppBar position="static" color="primary" sx={{ mb: 2 }}>
             <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
               <Typography variant="h6" component="div">
-                Пратки
+                Курирска апликација
               </Typography>
               <UserMenu onProfile={() => setShowProfilePage(true)} onLogout={handleLogout} />
             </Toolbar>
@@ -335,6 +336,13 @@ function App() {
               ))}
             </Box>
           </Box>
+        )}
+        {/* Overlay to close filter on outside click */}
+        {!isDesktop && addressFilterOpen && (
+          <Box
+            onClick={() => setAddressFilterOpen(false)}
+            sx={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1999, background: 'transparent' }}
+          />
         )}
         {/* Client cards grid for desktop, column for mobile */}
         <Box className="client-list" sx={{
