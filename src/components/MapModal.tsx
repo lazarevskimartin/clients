@@ -44,6 +44,20 @@ const MapModal: React.FC<MapModalProps> = ({ open, onClose, address }) => {
     } else {
       displayAddress = '3rd Macedonian Brigade Blvd';
     }
+  } else if (address && address.includes('Владимир Комаров')) {
+    const match = address.match(/Владимир Комаров\s*(\d+)/);
+    if (match) {
+      displayAddress = `Vladimir Komarov ${match[1]}`;
+    } else {
+      displayAddress = 'Vladimir Komarov';
+    }
+  } else if (address && address.includes('Бојмија')) {
+    const match = address.match(/Бојмија\s*(\d+)/);
+    if (match) {
+      displayAddress = `Bojmija ${match[1]}`;
+    } else {
+      displayAddress = 'Bojmija';
+    }
   }
   const googleSrc = `https://www.google.com/maps?q=${encodeURIComponent(displayAddress)}&output=embed`;
 

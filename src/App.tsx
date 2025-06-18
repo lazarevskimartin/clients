@@ -30,6 +30,8 @@ const ADDRESS_OPTIONS = [
   'Јане Сандански',
   'АВНОЈ',
   '3-та Македонска Бригада',
+  'Владимир Комаров',
+  'Бојмија'
 ];
 
 function App() {
@@ -363,6 +365,7 @@ function App() {
           mx: { md: 'auto' },
           justifyItems: 'stretch',
           alignItems: 'stretch',
+          pb: { xs: 10, md: 6 }, // extra padding bottom for mobile nav/status bar
         }}>
           {loading ? (
             <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4, gridColumn: '1/-1' }}>

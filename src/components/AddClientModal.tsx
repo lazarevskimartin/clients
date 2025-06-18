@@ -12,6 +12,8 @@ const ADDRESS_OPTIONS = [
     'Јане Сандански',
     'АВНОЈ',
     '3-та Македонска Бригада',
+    'Владимир Комаров',
+    'Бојмија'
 ];
 
 interface AddClientModalProps {

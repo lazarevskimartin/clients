@@ -5,6 +5,7 @@ import dotenv from 'dotenv';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from './models/User.js';
+import Delivery from './models/Delivery.js';
 
 dotenv.config();
 
@@ -128,6 +129,39 @@ app.get('/api/profile', authMiddleware, async (req, res) => {
     } catch (err) {
         res.status(500).json({ error: 'Server error' });
     }
+});
+
+// Delivery records CRUD (protected)
+app.get('/api/deliveries', authMiddleware, async (req, res) => {
+    const deliveries = await Delivery.find({ user: req.user.userId }).sort({ date: -1 });
+    res.json(deliveries);
+});
+
+app.post('/api/deliveries', authMiddleware, async (req, res) => {
+    const { date, delivered } = req.body;
+    if (!date || delivered == null) return res.status(400).json({ error: 'Date and delivered required' });
+    const delivery = new Delivery({ user: req.user.userId, date, delivered });
+    await delivery.save();
+    res.status(201).json(delivery);
+});
+
+app.put('/api/deliveries/:id', authMiddleware, async (req, res) => {
+    const { date, delivered } = req.body;
+    const { id } = req.params;
+    const delivery = await Delivery.findOneAndUpdate(
+        { _id: id, user: req.user.userId },
+        { date, delivered },
+        { new: true }
+    );
+    if (!delivery) return res.status(404).json({ error: 'Not found' });
+    res.json(delivery);
+});
+
+app.delete('/api/deliveries/:id', authMiddleware, async (req, res) => {
+    const { id } = req.params;
+    const delivery = await Delivery.findOneAndDelete({ _id: id, user: req.user.userId });
+    if (!delivery) return res.status(404).json({ error: 'Not found' });
+    res.status(204).end();
 });
 
 const PORT = process.env.PORT || 5000;
