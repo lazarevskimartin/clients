@@ -4,4 +4,5 @@ export interface Client {
   address: string;
   phone: string;
   status: 'delivered' | 'undelivered' | 'pending';
+  undeliveredNote?: string;
 }

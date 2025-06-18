@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { Client } from '../types';
-import { Card, CardContent, Typography, Box, Button, IconButton, Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
+import { Card, CardContent, Typography, Box, Button, IconButton, Menu, MenuItem, ListItemIcon, ListItemText, TextField, Dialog, DialogTitle, DialogContent, DialogActions } from '@mui/material';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PhoneIcon from '@mui/icons-material/Phone';
 import SvgIcon from '@mui/material/SvgIcon';
@@ -31,15 +31,22 @@ const ClientCard: React.FC<ClientCardProps> = ({ client, onDelete }) => {
     const [mapOpen, setMapOpen] = useState(false);
     const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
     const [status, setStatus] = useState<'delivered' | 'undelivered' | 'pending'>(client.status || 'pending');
+    const [undeliveredNote, setUndeliveredNote] = useState<string>(client.undeliveredNote || '');
+    const [noteModalOpen, setNoteModalOpen] = useState(false);
 
     const handleStatusClick = (event: React.MouseEvent<HTMLElement>) => {
       setAnchorEl(event.currentTarget);
     };
     const handleStatusClose = () => setAnchorEl(null);
     const handleStatusChange = async (newStatus: 'delivered' | 'undelivered' | 'pending') => {
+      if (newStatus === 'undelivered') {
+        setNoteModalOpen(true);
+        setAnchorEl(null);
+        return;
+      }
       setStatus(newStatus);
+      setUndeliveredNote('');
       setAnchorEl(null);
-      // Call API to update status
       const token = localStorage.getItem('token');
       await fetch(`/api/clients/${client._id}/status`, {
         method: 'PATCH',
@@ -53,6 +60,24 @@ const ClientCard: React.FC<ClientCardProps> = ({ client, onDelete }) => {
       if (client.status !== newStatus) {
         if (typeof window !== 'undefined' && window.dispatchEvent) {
           window.dispatchEvent(new CustomEvent('client-status-changed', { detail: { id: client._id, status: newStatus } }));
+        }
+      }
+    };
+    const handleNoteSave = async () => {
+      setStatus('undelivered');
+      setNoteModalOpen(false);
+      const token = localStorage.getItem('token');
+      await fetch(`/api/clients/${client._id}/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+        },
+        body: JSON.stringify({ status: 'undelivered', undeliveredNote }),
+      });
+      if (client.status !== 'undelivered') {
+        if (typeof window !== 'undefined' && window.dispatchEvent) {
+          window.dispatchEvent(new CustomEvent('client-status-changed', { detail: { id: client._id, status: 'undelivered' } }));
         }
       }
     };
@@ -140,30 +165,47 @@ const ClientCard: React.FC<ClientCardProps> = ({ client, onDelete }) => {
                     anchorEl={anchorEl}
                     open={Boolean(anchorEl)}
                     onClose={handleStatusClose}
-                    PaperProps={{
-                      sx: {
-                        borderRadius: 2,
-                        minWidth: 180,
-                        boxShadow: 3,
-                        p: 1,
-                      },
-                    }}
                   >
-                    <MenuItem onClick={() => handleStatusChange('delivered')} sx={{ borderRadius: 1 }}>
+                    <MenuItem onClick={() => handleStatusChange('delivered')}>
                       <ListItemIcon><CheckCircleIcon color="success" /></ListItemIcon>
                       <ListItemText primary="Доставена" />
                     </MenuItem>
-                    <MenuItem onClick={() => handleStatusChange('pending')} sx={{ borderRadius: 1 }}>
-                      <ListItemIcon><HourglassEmptyIcon color="warning" /></ListItemIcon>
-                      <ListItemText primary="Во тек" />
-                    </MenuItem>
-                    <MenuItem onClick={() => handleStatusChange('undelivered')} sx={{ borderRadius: 1 }}>
+                    <MenuItem onClick={() => handleStatusChange('undelivered')}>
                       <ListItemIcon><CancelIcon color="error" /></ListItemIcon>
                       <ListItemText primary="Недоставена" />
                     </MenuItem>
+                    <MenuItem onClick={() => handleStatusChange('pending')}>
+                      <ListItemIcon><HourglassEmptyIcon color="warning" /></ListItemIcon>
+                      <ListItemText primary="Во тек" />
+                    </MenuItem>
                   </Menu>
+                  {/* Модал за опис на недоставена */}
+                  <Dialog open={noteModalOpen} onClose={() => setNoteModalOpen(false)} maxWidth="xs" fullWidth>
+                    <DialogTitle>Опис за недоставена</DialogTitle>
+                    <DialogContent>
+                      <TextField
+                        label="Зошто не е доставена?"
+                        value={undeliveredNote}
+                        onChange={e => setUndeliveredNote(e.target.value)}
+                        fullWidth
+                        multiline
+                        minRows={2}
+                        autoFocus
+                      />
+                    </DialogContent>
+                    <DialogActions>
+                      <Button onClick={() => setNoteModalOpen(false)}>Откажи</Button>
+                      <Button onClick={handleNoteSave} variant="contained" disabled={!undeliveredNote.trim()}>Зачувај</Button>
+                    </DialogActions>
+                  </Dialog>
                 </Box>
                 <MapModal open={mapOpen} onClose={() => setMapOpen(false)} address={client.address || ''} />
+              {/* Прикажи опис само ако е недоставена и има опис */}
+              {status === 'undelivered' && undeliveredNote && (
+                <Box sx={{ mt: 1, p: 1, background: '#fff3e0', borderRadius: 1, fontSize: '0.95rem', color: '#b26a00' }}>
+                  <strong>Опис:</strong> {undeliveredNote}
+                </Box>
+              )}
             </CardContent>
         </Card>
     );

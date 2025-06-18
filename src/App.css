@@ -289,6 +289,12 @@ html,
   -moz-appearance: none;
 }
 
+/* Поправка за падинг на DialogContent после DialogTitle */
+.MuiDialogTitle-root + .MuiDialogContent-root,
+.MuiDialogTitle-root + .css-8rq8j-MuiDialogContent-root {
+  padding-top: 5px !important;
+}
+
 @media (max-width: 600px) {
   .app-header {
     flex-direction: column;

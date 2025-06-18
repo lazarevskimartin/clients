@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import type { Client } from '../types';
-import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem } from '@mui/material';
+import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem, InputAdornment } from '@mui/material';
 
 const ADDRESS_OPTIONS = [
     'Венијамин Мачуковски',
@@ -26,20 +26,26 @@ const AddClientModal: React.FC<AddClientModalProps> = ({ open, onClose, onAdd })
     const [fullName, setFullName] = useState('');
     const [address, setAddress] = useState('');
     const [streetNumber, setStreetNumber] = useState('');
-    const [phone, setPhone] = useState('+389');
+    const [phoneSuffix, setPhoneSuffix] = useState(''); // само бројки после +389
+
+    const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        // дозволи само бројки
+        const value = e.target.value.replace(/\D/g, '');
+        setPhoneSuffix(value);
+    };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         onAdd({
             fullName,
             address: address + (streetNumber ? ' ' + streetNumber : ''),
-            phone,
+            phone: '+389' + phoneSuffix,
             status: 'pending',
         });
         setFullName('');
         setAddress('');
         setStreetNumber('');
-        setPhone('+389'); // Reset to default
+        setPhoneSuffix('');
         onClose();
     };
 
@@ -60,11 +66,19 @@ const AddClientModal: React.FC<AddClientModalProps> = ({ open, onClose, onAdd })
                     />
                     <TextField
                         label="Телефон"
-                        value={phone}
-                        onChange={e => setPhone(e.target.value)}
+                        value={phoneSuffix}
+                        onChange={handlePhoneChange}
                         fullWidth
                         margin="normal"
                         required
+                        InputProps={{
+                            startAdornment: <InputAdornment position="start">+389</InputAdornment>,
+                            inputMode: 'numeric',
+                        }}
+                        inputProps={{
+                            maxLength: 8, // макс 8 цифри после +389
+                            pattern: '[0-9]*', // pattern треба да оди тука
+                        }}
                     />
                     <TextField
                         label="Адреса"

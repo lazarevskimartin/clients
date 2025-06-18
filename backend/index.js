@@ -6,21 +6,13 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from './models/User.js';
 import Delivery from './models/Delivery.js';
+import Client from './models/Client.js';
 
 dotenv.config();
 
 const app = express();
 app.use(cors());
 app.use(express.json());
-
-const clientSchema = new mongoose.Schema({
-    fullName: { type: String, required: true },
-    address: { type: String, required: true },
-    phone: { type: String, required: true },
-    status: { type: String, enum: ['delivered', 'undelivered', 'pending'], default: 'pending' }
-});
-
-const Client = mongoose.model('Client', clientSchema);
 
 // Protect all client routes with authMiddleware
 app.get('/api/clients', authMiddleware, async (req, res) => {
@@ -50,13 +42,20 @@ app.get('/api/clients/status/:status', authMiddleware, async (req, res) => {
     res.json(clients);
 });
 
+// Update status + undeliveredNote
 app.patch('/api/clients/:id/status', authMiddleware, async (req, res) => {
     const { id } = req.params;
-    const { status } = req.body;
+    const { status, undeliveredNote } = req.body;
     if (!['delivered', 'undelivered', 'pending'].includes(status)) {
         return res.status(400).json({ error: 'Invalid status' });
     }
-    const client = await Client.findByIdAndUpdate(id, { status }, { new: true });
+    const update = { status };
+    if (status === 'undelivered') {
+        update.undeliveredNote = undeliveredNote || '';
+    } else {
+        update.undeliveredNote = undefined;
+    }
+    const client = await Client.findByIdAndUpdate(id, update, { new: true });
     if (!client) return res.status(404).json({ error: 'Client not found' });
     res.json(client);
 });
