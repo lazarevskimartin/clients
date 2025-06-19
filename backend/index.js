@@ -7,6 +7,8 @@ import jwt from 'jsonwebtoken';
 import User from './models/User.js';
 import Delivery from './models/Delivery.js';
 import Client from './models/Client.js';
+import Street from './models/Street.js';
+import streetsRouter from './routes/streets.js';
 
 dotenv.config();
 
@@ -162,6 +164,8 @@ app.delete('/api/deliveries/:id', authMiddleware, async (req, res) => {
     if (!delivery) return res.status(404).json({ error: 'Not found' });
     res.status(204).end();
 });
+
+app.use('/api/streets', authMiddleware, streetsRouter);
 
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI;

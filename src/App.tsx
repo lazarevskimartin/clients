@@ -17,22 +17,9 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { useTheme } from '@mui/material/styles';
+import { getStreets } from './utils/streetsApi';
 
 const API_URL = 'https://kurir.crnaovca.mk/api/clients';
-
-const ADDRESS_OPTIONS = [
-  'Венијамин Мачуковски',
-  'Анастас Митрев',
-  'Петар Ацев',
-  'Симеон Кавракиров',
-  'Кузман Ј. Питу',
-  'Васко Карангелески',
-  'Јане Сандански',
-  'АВНОЈ',
-  '3-та Македонска Бригада',
-  'Владимир Комаров',
-  'Бојмија'
-];
 
 function App() {
   const [clients, setClients] = useState<Client[]>([]);
@@ -47,6 +34,7 @@ function App() {
   const [showProfilePage, setShowProfilePage] = useState(false);
   const [search, setSearch] = useState('');
   const [addressFilterOpen, setAddressFilterOpen] = useState(false);
+  const [streetOptions, setStreetOptions] = useState<string[]>([]);
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
 
@@ -63,7 +51,12 @@ function App() {
     })
       .then(res => res.json())
       .then(data => {
-        setClients(data);
+        if (Array.isArray(data)) {
+          setClients(data);
+        } else {
+          setClients([]);
+          // optionally: console.error('API did not return array:', data);
+        }
         setLoading(false);
       });
     // Listen for status change to remove client from list
@@ -97,6 +90,18 @@ function App() {
       setStatusFilter('pending');
     }
   }, [isLoggedIn, statusFilter]);
+
+  useEffect(() => {
+    // Fetch street options
+    const token = localStorage.getItem('token');
+    if (token) {
+      getStreets(token).then((data) => {
+        if (Array.isArray(data)) {
+          setStreetOptions(data.map((s: any) => s.name));
+        }
+      });
+    }
+  }, [isLoggedIn]);
 
   const handleAddClient = async (client: Omit<Client, '_id'>) => {
     const token = localStorage.getItem('token');
@@ -156,8 +161,8 @@ function App() {
     sortedClients = [...filteredClients].sort((a, b) => {
       // Find the index of the address prefix in ADDRESS_OPTIONS
       const getAddressIndex = (address: string) => {
-        const found = ADDRESS_OPTIONS.findIndex(opt => address.startsWith(opt));
-        return found === -1 ? ADDRESS_OPTIONS.length : found;
+        const found = streetOptions.findIndex(opt => address.startsWith(opt));
+        return found === -1 ? streetOptions.length : found;
       };
       const idxA = getAddressIndex(a.address);
       const idxB = getAddressIndex(b.address);
@@ -268,7 +273,7 @@ function App() {
               variant={addressFilter === '' ? 'filled' : 'outlined'}
               clickable
             />
-            {ADDRESS_OPTIONS.map(opt => (
+            {streetOptions.map(opt => (
               <Chip
                 key={opt}
                 label={opt}
@@ -326,7 +331,7 @@ function App() {
               >
                 Сите адреси
               </Button>
-              {ADDRESS_OPTIONS.map(opt => (
+              {streetOptions.map(opt => (
                 <Button
                   key={opt}
                   variant={addressFilter === opt ? 'contained' : 'outlined'}
@@ -381,6 +386,7 @@ function App() {
           open={modalOpen}
           onClose={() => setModalOpen(false)}
           onAdd={handleAddClient}
+          streetOptions={streetOptions}
         />
         <ConfirmModal
           open={confirmOpen}

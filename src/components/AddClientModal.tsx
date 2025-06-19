@@ -2,27 +2,14 @@ import React, { useState } from 'react';
 import type { Client } from '../types';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem, InputAdornment } from '@mui/material';
 
-const ADDRESS_OPTIONS = [
-    'Венијамин Мачуковски',
-    'Анастас Митрев',
-    'Петар Ацев',
-    'Симеон Кавракиров',
-    'Кузман Ј. Питу',
-    'Васко Карангелески',
-    'Јане Сандански',
-    'АВНОЈ',
-    '3-та Македонска Бригада',
-    'Владимир Комаров',
-    'Бојмија'
-];
-
 interface AddClientModalProps {
     open: boolean;
     onClose: () => void;
     onAdd: (client: Omit<Client, '_id'>) => void;
+    streetOptions: string[];
 }
 
-const AddClientModal: React.FC<AddClientModalProps> = ({ open, onClose, onAdd }) => {
+const AddClientModal: React.FC<AddClientModalProps> = ({ open, onClose, onAdd, streetOptions }) => {
     const [fullName, setFullName] = useState('');
     const [address, setAddress] = useState('');
     const [streetNumber, setStreetNumber] = useState('');
@@ -89,7 +76,7 @@ const AddClientModal: React.FC<AddClientModalProps> = ({ open, onClose, onAdd })
                         required
                         select
                     >
-                        {ADDRESS_OPTIONS.map(opt => (
+                        {streetOptions.map(opt => (
                             <MenuItem key={opt} value={opt}>{opt}</MenuItem>
                         ))}
                     </TextField>

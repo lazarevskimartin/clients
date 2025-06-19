@@ -5,8 +5,12 @@ import {
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import { getDeliveries, addDelivery, updateDelivery, deleteDelivery } from '../utils/deliveryApi';
 import type { DeliveryRecord } from '../utils/deliveryApi';
+import AddStreetForm from './AddStreetForm';
+import { getStreets, deleteStreet, updateStreetsOrder } from '../utils/streetsApi';
 
 // Utility за македонски датум
 function formatMacedonianDate(dateStr: string) {
@@ -26,6 +30,9 @@ const UserProfile: React.FC = () => {
   const [formDelivered, setFormDelivered] = useState<number>(0);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [streets, setStreets] = useState<any[]>([]);
+  const [streetLoading, setStreetLoading] = useState(false);
+  const [streetError, setStreetError] = useState('');
 
   useEffect(() => {
     const token = localStorage.getItem('token');
@@ -46,8 +53,25 @@ const UserProfile: React.FC = () => {
     // Fetch deliveries
     getDeliveries(token)
       .then(res => setRecords(res.data))
-      .catch(() => {});
+      .catch(() => { });
+    // Fetch streets
+    fetchStreets();
   }, []);
+
+  const fetchStreets = async () => {
+    setStreetLoading(true);
+    setStreetError('');
+    const token = localStorage.getItem('token');
+    if (!token) return;
+    try {
+      const data = await getStreets(token);
+      setStreets(data);
+    } catch {
+      setStreetError('Грешка при вчитување улици');
+    } finally {
+      setStreetLoading(false);
+    }
+  };
 
   // Summary
   const totalDelivered = records.reduce((sum, r) => sum + r.delivered, 0);
@@ -94,6 +118,18 @@ const UserProfile: React.FC = () => {
     await deleteDelivery(token, deleteId);
     setRecords(records.filter(r => r._id !== deleteId));
     setDeleteId(null);
+  };
+  const handleMoveStreet = async (index: number, direction: 'up' | 'down') => {
+    if ((direction === 'up' && index === 0) || (direction === 'down' && index === streets.length - 1)) return;
+    const newStreets = [...streets];
+    const swapWith = direction === 'up' ? index - 1 : index + 1;
+    [newStreets[index], newStreets[swapWith]] = [newStreets[swapWith], newStreets[index]];
+    // Update order fields
+    const ordered = newStreets.map((s, i) => ({ _id: s._id, order: i }));
+    setStreets(newStreets);
+    const token = localStorage.getItem('token') || '';
+    await updateStreetsOrder(ordered, token);
+    fetchStreets();
   };
 
   if (loading) return <div>Вчитување профил...</div>;
@@ -200,6 +236,49 @@ const UserProfile: React.FC = () => {
                 </TableBody>
               </Table>
             </TableContainer>
+          )}
+        </Box>
+        <Box mt={4} mb={2}>
+          <Typography variant="h6" mb={1}>Управување со улици</Typography>
+          <AddStreetForm
+            token={localStorage.getItem('token') || ''}
+            onStreetAdded={fetchStreets}
+          />
+          {streetLoading ? (
+            <div>Вчитување улици...</div>
+          ) : streetError ? (
+            <div style={{ color: 'red' }}>{streetError}</div>
+          ) : (
+            <Box mt={2}>
+              {streets.length === 0 ? (
+                <div>Нема додадени улици.</div>
+              ) : (
+                <ul style={{ padding: 0, listStyle: 'none', margin: 0 }}>
+                  {streets.map((street, idx) => (
+                    <li key={street._id} style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
+                      <span style={{ flex: 1 }}>{street.name}</span>
+                      <a
+                        href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(street.googleMapsName)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        style={{ color: '#1976d2', textDecoration: 'underline', fontSize: 14 }}
+                      >
+                        Google Maps
+                      </a>
+                      <IconButton size="small" onClick={() => handleMoveStreet(idx, 'up')} disabled={idx === 0}>
+                        <ArrowUpwardIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton size="small" onClick={() => handleMoveStreet(idx, 'down')} disabled={idx === streets.length - 1}>
+                        <ArrowDownwardIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton size="small" color="error" onClick={async () => { await deleteStreet(street._id, localStorage.getItem('token') || ''); fetchStreets(); }}>
+                        <DeleteIcon fontSize="small" />
+                      </IconButton>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </Box>
           )}
         </Box>
       </Box>
