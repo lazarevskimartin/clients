@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { Menu, MenuItem, IconButton, Avatar } from '@mui/material';
 import PersonIcon from '@mui/icons-material/Person';
+import type { UserRole } from '../types';
 
 interface UserMenuProps {
   onProfile: () => void;
   onLogout: () => void;
+  onUsers?: () => void;
+  role?: UserRole;
 }
 
-const UserMenu: React.FC<Omit<UserMenuProps, 'email'>> = ({ onProfile, onLogout }) => {
+const UserMenu: React.FC<UserMenuProps> = ({ onProfile, onLogout, onUsers, role }) => {
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
@@ -35,6 +38,11 @@ const UserMenu: React.FC<Omit<UserMenuProps, 'email'>> = ({ onProfile, onLogout 
         <MenuItem onClick={() => { handleMenuClose(); onProfile(); }}>
           Мој профил
         </MenuItem>
+        {role === 'admin' && onUsers && (
+          <MenuItem onClick={() => { handleMenuClose(); onUsers(); }}>
+            Корисници
+          </MenuItem>
+        )}
         <MenuItem onClick={() => { handleMenuClose(); onLogout(); }}>
           Одјава
         </MenuItem>

@@ -9,6 +9,7 @@ import Delivery from './models/Delivery.js';
 import Client from './models/Client.js';
 import Street from './models/Street.js';
 import streetsRouter from './routes/streets.js';
+import usersRouter from './routes/users.js';
 
 dotenv.config();
 
@@ -107,9 +108,14 @@ app.post('/api/register', async (req, res) => {
             return res.status(409).json({ error: 'User already exists' });
         }
         const hashedPassword = await bcrypt.hash(password, 10);
-        const user = new User({ email, password: hashedPassword });
+        // Ако има role во body и е валиден, користи го, инаку default
+        let role = req.body.role;
+        if (!['admin', 'operator', 'courier'].includes(role)) {
+            role = 'courier';
+        }
+        const user = new User({ email, password: hashedPassword, role });
         await user.save();
-        res.status(201).json({ message: 'User registered successfully' });
+        res.status(201).json({ message: 'User registered successfully', role: user.role });
     } catch (err) {
         res.status(500).json({ error: 'Server error' });
     }
@@ -130,8 +136,8 @@ app.post('/api/login', async (req, res) => {
         if (!isMatch) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
-        const token = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        res.json({ token });
+        const token = jwt.sign({ userId: user._id, email: user.email, role: user.role }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        res.json({ token, role: user.role });
     } catch (err) {
         res.status(500).json({ error: 'Server error' });
     }
@@ -148,11 +154,6 @@ function authMiddleware(req, res, next) {
         next();
     });
 }
-
-// Example protected route
-app.get('/api/protected', authMiddleware, (req, res) => {
-    res.json({ message: 'This is a protected route', user: req.user });
-});
 
 // Get user profile (protected)
 app.get('/api/profile', authMiddleware, async (req, res) => {
@@ -199,6 +200,7 @@ app.delete('/api/deliveries/:id', authMiddleware, async (req, res) => {
 });
 
 app.use('/api/streets', authMiddleware, streetsRouter);
+app.use('/api/users', usersRouter);
 
 const PORT = process.env.PORT || 5000;
 const MONGO_URI = process.env.MONGO_URI;

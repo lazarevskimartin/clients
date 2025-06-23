@@ -240,10 +240,13 @@ const UserProfile: React.FC = () => {
         </Box>
         <Box mt={4} mb={2}>
           <Typography variant="h6" mb={1}>Управување со улици</Typography>
-          <AddStreetForm
-            token={localStorage.getItem('token') || ''}
-            onStreetAdded={fetchStreets}
-          />
+          {/* Само ако не е courier прикажи AddStreetForm и копчиња за уреди/бриши/премести */}
+          {profile.role !== 'courier' && (
+            <AddStreetForm
+              token={localStorage.getItem('token') || ''}
+              onStreetAdded={fetchStreets}
+            />
+          )}
           {streetLoading ? (
             <div>Вчитување улици...</div>
           ) : streetError ? (
@@ -265,15 +268,18 @@ const UserProfile: React.FC = () => {
                       >
                         Google Maps
                       </a>
-                      <IconButton size="small" onClick={() => handleMoveStreet(idx, 'up')} disabled={idx === 0}>
-                        <ArrowUpwardIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton size="small" onClick={() => handleMoveStreet(idx, 'down')} disabled={idx === streets.length - 1}>
-                        <ArrowDownwardIcon fontSize="small" />
-                      </IconButton>
-                      <IconButton size="small" color="error" onClick={async () => { await deleteStreet(street._id, localStorage.getItem('token') || ''); fetchStreets(); }}>
-                        <DeleteIcon fontSize="small" />
-                      </IconButton>
+                      {/* Само ако не е courier прикажи копчиња за уреди/бриши/премести */}
+                      {profile.role !== 'courier' && <>
+                        <IconButton size="small" onClick={() => handleMoveStreet(idx, 'up')} disabled={idx === 0}>
+                          <ArrowUpwardIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton size="small" onClick={() => handleMoveStreet(idx, 'down')} disabled={idx === streets.length - 1}>
+                          <ArrowDownwardIcon fontSize="small" />
+                        </IconButton>
+                        <IconButton size="small" color="error" onClick={async () => { await deleteStreet(street._id, localStorage.getItem('token') || ''); fetchStreets(); }}>
+                          <DeleteIcon fontSize="small" />
+                        </IconButton>
+                      </>}
                     </li>
                   ))}
                 </ul>

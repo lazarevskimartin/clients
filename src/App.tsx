@@ -7,7 +7,8 @@ import Login from './components/Login';
 import Register from './components/Register';
 import StatusNav from './components/StatusNav';
 import UserProfile from './components/UserProfile';
-import type { Client } from './types';
+import UsersAdmin from './components/UsersAdmin';
+import type { Client, UserRole } from './types';
 import './App.css';
 import { Container, AppBar, Toolbar, Typography, IconButton, CircularProgress, Box, Fab, Button, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Chip, useMediaQuery } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
@@ -18,6 +19,7 @@ import HourglassEmptyIcon from '@mui/icons-material/HourglassEmpty';
 import CancelIcon from '@mui/icons-material/Cancel';
 import { useTheme } from '@mui/material/styles';
 import { getStreets } from './utils/streetsApi';
+import Dialog from '@mui/material/Dialog';
 
 const API_URL = 'https://kurir.crnaovca.mk/api/clients';
 
@@ -37,6 +39,8 @@ function App() {
   const [streetOptions, setStreetOptions] = useState<string[]>([]);
   const [editModalOpen, setEditModalOpen] = useState(false);
   const [clientToEdit, setClientToEdit] = useState<Client | null>(null);
+  const [userRole, setUserRole] = useState<UserRole | null>(null);
+  const [showUsersPage, setShowUsersPage] = useState(false);
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
 
@@ -81,16 +85,20 @@ function App() {
           // Token expired
           localStorage.removeItem('token');
           setIsLoggedIn(false);
+          setUserRole(null);
         } else {
           setIsLoggedIn(true);
+          setUserRole(payload.role as UserRole);
         }
       } catch (e) {
         // Invalid token
         localStorage.removeItem('token');
         setIsLoggedIn(false);
+        setUserRole(null);
       }
     } else {
       setIsLoggedIn(false);
+      setUserRole(null);
     }
   }, []);
 
@@ -301,7 +309,12 @@ function App() {
           </List>
           <Box sx={{ flexGrow: 1 }} />
           <Box sx={{ p: 2 }}>
-            <UserMenu onProfile={() => setShowProfilePage(true)} onLogout={handleLogout} />
+            <UserMenu
+              onProfile={() => setShowProfilePage(true)}
+              onLogout={handleLogout}
+              onUsers={() => setShowUsersPage(true)}
+              role={userRole || undefined}
+            />
           </Box>
         </Drawer>
       )}
@@ -313,7 +326,12 @@ function App() {
               <Typography variant="h6" component="div">
                 Курирска апликација
               </Typography>
-              <UserMenu onProfile={() => setShowProfilePage(true)} onLogout={handleLogout} />
+              <UserMenu 
+                onProfile={() => setShowProfilePage(true)} 
+                onLogout={handleLogout} 
+                onUsers={() => setShowUsersPage(true)} 
+                role={userRole || undefined} 
+              />
             </Toolbar>
           </AppBar>
         )}
@@ -469,6 +487,27 @@ function App() {
           <AddIcon />
         </Fab>
       </Box>
+      {/* UsersAdmin modal for mobile, inline for desktop */}
+      {showUsersPage && userRole === 'admin' && (
+        isDesktop ? (
+          <UsersAdmin onClose={() => setShowUsersPage(false)} />
+        ) : (
+          <Dialog
+            open={showUsersPage}
+            onClose={() => setShowUsersPage(false)}
+            fullScreen
+            PaperProps={{ sx: { p: 0, m: 0 } }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', p: 2, borderBottom: '1px solid #eee' }}>
+              <Typography variant="h6" sx={{ flex: 1 }}>Корисници</Typography>
+              <IconButton edge="end" onClick={() => setShowUsersPage(false)}>
+                <CancelIcon />
+              </IconButton>
+            </Box>
+            <UsersAdmin onClose={() => setShowUsersPage(false)} />
+          </Dialog>
+        )
+      )}
     </Box>
   );
 }
