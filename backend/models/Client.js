@@ -5,7 +5,7 @@ const clientSchema = new mongoose.Schema({
   address: { type: String, required: true },
   phone: { type: String, required: true },
   status: { type: String, enum: ['delivered', 'undelivered', 'pending'], default: 'pending' },
-  undeliveredNote: { type: String }, // Опис за недоставена
+  note: { type: String }, // Општ опис/белешка за статусот
 }, { timestamps: true });
 
 const Client = mongoose.model('Client', clientSchema);

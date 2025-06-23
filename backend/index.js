@@ -23,8 +23,8 @@ app.get('/api/clients', authMiddleware, async (req, res) => {
 });
 
 app.post('/api/clients', authMiddleware, async (req, res) => {
-    const { fullName, address, phone } = req.body;
-    const client = new Client({ fullName, address, phone });
+    const { fullName, address, phone, note } = req.body;
+    const client = new Client({ fullName, address, phone, note });
     await client.save();
     res.status(201).json(client);
 });
@@ -44,20 +44,53 @@ app.get('/api/clients/status/:status', authMiddleware, async (req, res) => {
     res.json(clients);
 });
 
-// Update status + undeliveredNote
+// Update status + note
 app.patch('/api/clients/:id/status', authMiddleware, async (req, res) => {
     const { id } = req.params;
-    const { status, undeliveredNote } = req.body;
+    const { status, note } = req.body;
     if (!['delivered', 'undelivered', 'pending'].includes(status)) {
         return res.status(400).json({ error: 'Invalid status' });
     }
     const update = { status };
-    if (status === 'undelivered') {
-        update.undeliveredNote = undeliveredNote || '';
-    } else {
-        update.undeliveredNote = undefined;
+    if (typeof note !== 'undefined') {
+        update.note = note;
     }
     const client = await Client.findByIdAndUpdate(id, update, { new: true });
+    if (!client) return res.status(404).json({ error: 'Client not found' });
+    res.json(client);
+});
+
+// Update all client fields (edit client) - PATCH or PUT
+app.patch('/api/clients/:id', authMiddleware, async (req, res) => {
+    const { id } = req.params;
+    const { fullName, address, phone, note } = req.body;
+    if (!fullName || !address || !phone) {
+        return res.status(400).json({ error: 'Сите полиња се задолжителни.' });
+    }
+    const update = { fullName, address, phone };
+    if (typeof note !== 'undefined') update.note = note;
+    const client = await Client.findByIdAndUpdate(
+        id,
+        update,
+        { new: true }
+    );
+    if (!client) return res.status(404).json({ error: 'Client not found' });
+    res.json(client);
+});
+
+app.put('/api/clients/:id', authMiddleware, async (req, res) => {
+    const { id } = req.params;
+    const { fullName, address, phone, note } = req.body;
+    if (!fullName || !address || !phone) {
+        return res.status(400).json({ error: 'Сите полиња се задолжителни.' });
+    }
+    const update = { fullName, address, phone };
+    if (typeof note !== 'undefined') update.note = note;
+    const client = await Client.findByIdAndUpdate(
+        id,
+        update,
+        { new: true, overwrite: true }
+    );
     if (!client) return res.status(404).json({ error: 'Client not found' });
     res.json(client);
 });
@@ -97,7 +130,7 @@ app.post('/api/login', async (req, res) => {
         if (!isMatch) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
-        const token = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1d' });
+        const token = jwt.sign({ userId: user._id, email: user.email }, process.env.JWT_SECRET, { expiresIn: '1h' });
         res.json({ token });
     } catch (err) {
         res.status(500).json({ error: 'Server error' });

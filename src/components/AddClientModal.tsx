@@ -1,46 +1,56 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import type { Client } from '../types';
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, MenuItem, InputAdornment } from '@mui/material';
 
-interface AddClientModalProps {
+interface ClientModalProps {
     open: boolean;
     onClose: () => void;
-    onAdd: (client: Omit<Client, '_id'>) => void;
+    onSubmit: (client: Partial<Client>) => void;
     streetOptions: string[];
+    initialData?: Partial<Client>;
+    mode?: 'add' | 'edit';
 }
 
-const AddClientModal: React.FC<AddClientModalProps> = ({ open, onClose, onAdd, streetOptions }) => {
-    const [fullName, setFullName] = useState('');
-    const [address, setAddress] = useState('');
-    const [streetNumber, setStreetNumber] = useState('');
-    const [phoneSuffix, setPhoneSuffix] = useState(''); // само бројки после +389
+const ClientModal: React.FC<ClientModalProps> = ({ open, onClose, onSubmit, streetOptions, initialData = {}, mode = 'add' }) => {
+    const [fullName, setFullName] = useState(initialData.fullName || '');
+    const [address, setAddress] = useState(initialData.address ? (initialData.address.split(' ').slice(0, -1).join(' ') || initialData.address) : '');
+    const [streetNumber, setStreetNumber] = useState(initialData.address ? (initialData.address.split(' ').pop() || '') : '');
+    const [phoneSuffix, setPhoneSuffix] = useState(initialData.phone ? initialData.phone.replace('+389', '') : '');
+    const [note, setNote] = useState(initialData.note || '');
+
+    // Only reset fields when opening the modal for a new client
+    useEffect(() => {
+        if (open) {
+            setFullName(initialData.fullName || '');
+            setAddress(initialData.address ? (initialData.address.split(' ').slice(0, -1).join(' ') || initialData.address) : '');
+            setStreetNumber(initialData.address ? (initialData.address.split(' ').pop() || '') : '');
+            setPhoneSuffix(initialData.phone ? initialData.phone.replace('+389', '') : '');
+            setNote(initialData.note || '');
+        }
+        // eslint-disable-next-line
+    }, [open]);
 
     const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        // дозволи само бројки
         const value = e.target.value.replace(/\D/g, '');
         setPhoneSuffix(value);
     };
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        onAdd({
+        onSubmit({
+            ...initialData,
             fullName,
             address: address + (streetNumber ? ' ' + streetNumber : ''),
             phone: '+389' + phoneSuffix,
-            status: 'pending',
+            note,
         });
-        setFullName('');
-        setAddress('');
-        setStreetNumber('');
-        setPhoneSuffix('');
-        onClose();
     };
 
     if (!open) return null;
 
     return (
         <Dialog open={open} onClose={onClose} fullWidth maxWidth="xs">
-            <DialogTitle>Додај клиент</DialogTitle>
+            <DialogTitle>{mode === 'edit' ? 'Измени клиент' : 'Додај клиент'}</DialogTitle>
             <DialogContent>
                 <form onSubmit={handleSubmit}>
                     <TextField
@@ -63,8 +73,8 @@ const AddClientModal: React.FC<AddClientModalProps> = ({ open, onClose, onAdd, s
                             inputMode: 'numeric',
                         }}
                         inputProps={{
-                            maxLength: 8, // макс 8 цифри после +389
-                            pattern: '[0-9]*', // pattern треба да оди тука
+                            maxLength: 8,
+                            pattern: '[0-9]*',
                         }}
                     />
                     <TextField
@@ -87,9 +97,19 @@ const AddClientModal: React.FC<AddClientModalProps> = ({ open, onClose, onAdd, s
                         fullWidth
                         margin="normal"
                     />
+                    <TextField
+                        label="Белешка (опционално)"
+                        value={note}
+                        onChange={e => setNote(e.target.value)}
+                        fullWidth
+                        margin="normal"
+                        multiline
+                        minRows={1}
+                        maxRows={4}
+                    />
                     <DialogActions>
                         <Button onClick={onClose} color="secondary">Откажи</Button>
-                        <Button type="submit" variant="contained">Додај</Button>
+                        <Button type="submit" variant="contained">{mode === 'edit' ? 'Зачувај' : 'Додај'}</Button>
                     </DialogActions>
                 </form>
             </DialogContent>
@@ -97,4 +117,4 @@ const AddClientModal: React.FC<AddClientModalProps> = ({ open, onClose, onAdd, s
     );
 };
 
-export default AddClientModal;
+export default ClientModal;

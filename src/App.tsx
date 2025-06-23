@@ -1,7 +1,7 @@
 import UserMenu from './components/UserMenu';
 import { useEffect, useState } from 'react';
 import ClientCard from './components/ClientCard';
-import AddClientModal from './components/AddClientModal';
+import ClientModal from './components/AddClientModal';
 import ConfirmModal from './components/ConfirmModal';
 import Login from './components/Login';
 import Register from './components/Register';
@@ -35,6 +35,8 @@ function App() {
   const [search, setSearch] = useState('');
   const [addressFilterOpen, setAddressFilterOpen] = useState(false);
   const [streetOptions, setStreetOptions] = useState<string[]>([]);
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [clientToEdit, setClientToEdit] = useState<Client | null>(null);
   const theme = useTheme();
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'));
 
@@ -55,7 +57,7 @@ function App() {
           setClients(data);
         } else {
           setClients([]);
-          // optionally: console.error('API did not return array:', data);
+          handleApiError(data);
         }
         setLoading(false);
       });
@@ -68,9 +70,28 @@ function App() {
   }, [statusFilter, isLoggedIn]);
 
   useEffect(() => {
-    // Check for JWT token
+    // Check for JWT token and its expiration
     const token = localStorage.getItem('token');
-    setIsLoggedIn(!!token);
+    if (token) {
+      try {
+        // Decode JWT (payload is in the middle, base64url encoded)
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        // exp is in seconds since epoch
+        if (payload.exp && Date.now() / 1000 > payload.exp) {
+          // Token expired
+          localStorage.removeItem('token');
+          setIsLoggedIn(false);
+        } else {
+          setIsLoggedIn(true);
+        }
+      } catch (e) {
+        // Invalid token
+        localStorage.removeItem('token');
+        setIsLoggedIn(false);
+      }
+    } else {
+      setIsLoggedIn(false);
+    }
   }, []);
 
   useEffect(() => {
@@ -103,7 +124,8 @@ function App() {
     }
   }, [isLoggedIn]);
 
-  const handleAddClient = async (client: Omit<Client, '_id'>) => {
+  // За add режим, барај ги сите полиња како string (без undefined)
+  const handleAddClient = async (client: Partial<Client>) => {
     const token = localStorage.getItem('token');
     const res = await fetch(API_URL, {
       method: 'POST',
@@ -111,10 +133,34 @@ function App() {
         'Content-Type': 'application/json',
         ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify(client),
+      body: JSON.stringify({
+        fullName: client.fullName || '',
+        address: client.address || '',
+        phone: client.phone || '',
+        status: 'pending',
+        note: client.note || '',
+      }),
     });
     const newClient = await res.json();
     setClients(prev => [...prev, newClient]);
+    setModalOpen(false); // Затвори го модалот по успешно додавање
+  };
+
+  const handleEditClient = async (client: Partial<Client>) => {
+    if (!client._id) return;
+    const token = localStorage.getItem('token');
+    const res = await fetch(`${API_URL}/${client._id}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify(client),
+    });
+    const updated = await res.json();
+    setClients(prev => prev.map(c => c._id === updated._id ? updated : c));
+    setEditModalOpen(false);
+    setClientToEdit(null);
   };
 
   const handleDeleteRequest = (id: string | undefined) => {
@@ -138,6 +184,14 @@ function App() {
     localStorage.removeItem('token');
     setIsLoggedIn(false);
     window.location.reload();
+  };
+
+  // Optional: check token on every API error and logout if invalid
+  const handleApiError = (err: any) => {
+    if (err && (err.error === 'Invalid token' || err.error === 'No token provided')) {
+      localStorage.removeItem('token');
+      setIsLoggedIn(false);
+    }
   };
 
   // Filter clients by search and address
@@ -378,15 +432,24 @@ function App() {
             </Box>
           ) : (
             sortedClients.map(client => (
-              <ClientCard key={client._id} client={client} onDelete={handleDeleteRequest} />
+              <ClientCard key={client._id} client={client} onDelete={handleDeleteRequest} onEdit={() => { setClientToEdit(client); setEditModalOpen(true); }} />
             ))
           )}
         </Box>
-        <AddClientModal
+        <ClientModal
+          open={editModalOpen}
+          onClose={() => { setEditModalOpen(false); setClientToEdit(null); }}
+          onSubmit={handleEditClient}
+          streetOptions={streetOptions}
+          initialData={clientToEdit || {}}
+          mode="edit"
+        />
+        <ClientModal
           open={modalOpen}
           onClose={() => setModalOpen(false)}
-          onAdd={handleAddClient}
+          onSubmit={handleAddClient}
           streetOptions={streetOptions}
+          mode="add"
         />
         <ConfirmModal
           open={confirmOpen}
