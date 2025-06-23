@@ -1,5 +1,5 @@
 import UserMenu from './components/UserMenu';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, lazy, Suspense } from 'react';
 import ClientCard from './components/ClientCard';
 import ClientModal from './components/AddClientModal';
 import ConfirmModal from './components/ConfirmModal';
@@ -7,9 +7,6 @@ import Login from './components/Login';
 import Register from './components/Register';
 import StatusNav from './components/StatusNav';
 import UserProfile from './components/UserProfile';
-import UsersAdmin from './components/UsersAdmin';
-import type { Client, UserRole } from './types';
-import './App.css';
 import { Container, AppBar, Toolbar, Typography, IconButton, CircularProgress, Box, Fab, Button, Drawer, List, ListItem, ListItemButton, ListItemIcon, ListItemText, Chip, useMediaQuery } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
@@ -20,8 +17,11 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import { useTheme } from '@mui/material/styles';
 import { getStreets } from './utils/streetsApi';
 import Dialog from '@mui/material/Dialog';
+import type { Client, UserRole } from './types';
+import './App.css';
 
 const API_URL = 'https://kurir.crnaovca.mk/api/clients';
+const UsersAdmin = lazy(() => import('./components/UsersAdmin'));
 
 function App() {
   const [clients, setClients] = useState<Client[]>([]);
@@ -490,7 +490,9 @@ function App() {
       {/* UsersAdmin modal for mobile, inline for desktop */}
       {showUsersPage && userRole === 'admin' && (
         isDesktop ? (
-          <UsersAdmin onClose={() => setShowUsersPage(false)} />
+          <Suspense fallback={<Box sx={{ p: 4, textAlign: 'center' }}><CircularProgress /></Box>}>
+            <UsersAdmin onClose={() => setShowUsersPage(false)} />
+          </Suspense>
         ) : (
           <Dialog
             open={showUsersPage}
@@ -504,7 +506,9 @@ function App() {
                 <CancelIcon />
               </IconButton>
             </Box>
-            <UsersAdmin onClose={() => setShowUsersPage(false)} />
+            <Suspense fallback={<Box sx={{ p: 4, textAlign: 'center' }}><CircularProgress /></Box>}>
+              <UsersAdmin onClose={() => setShowUsersPage(false)} />
+            </Suspense>
           </Dialog>
         )
       )}
